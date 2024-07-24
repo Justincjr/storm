@@ -14,8 +14,8 @@ import streamlit as st
 # import sys
 # sys.path.append('../../')
 from knowledge_storm import STORMWikiRunnerArguments, STORMWikiRunner, STORMWikiLMConfigs
-from knowledge_storm.lm import OpenAIModel
-from knowledge_storm.rm import YouRM
+from knowledge_storm.lm import OpenAIModel, AzureOpenAIModel
+from knowledge_storm.rm import YouRM, BingSearch
 from knowledge_storm.storm_wiki.modules.callback import BaseCallbackHandler
 from stoc import stoc
 
@@ -503,9 +503,30 @@ def set_storm_runner():
 
     # configure STORM runner
     llm_configs = STORMWikiLMConfigs()
-    llm_configs.init_openai_model(openai_api_key=st.secrets['OPENAI_API_KEY'], openai_type='openai')
-    llm_configs.set_question_asker_lm(OpenAIModel(model='gpt-4-1106-preview', api_key=st.secrets['OPENAI_API_KEY'],
-                                                  api_provider='openai',
+    openai_kwargs = {
+        'api_key': st.secrets['OPENAI_API_KEY'],
+        'temperature': 1.0,
+        'top_p': 0.9,
+    }
+    openai_kwargs['api_base'] = st.secrets['AZURE_API_BASE']
+    openai_kwargs['api_version'] = st.secrets['AZURE_API_VERSION']
+    ModelClass = AzureOpenAIModel
+    gpt_35_model_name = 'gpt-35-turbo'
+    gpt_4_model_name = 'gpt-4o'
+    conv_simulator_lm = ModelClass(model=gpt_35_model_name, max_tokens=500, **openai_kwargs)
+    question_asker_lm = ModelClass(model=gpt_35_model_name, max_tokens=500, **openai_kwargs)
+    outline_gen_lm = ModelClass(model=gpt_4_model_name, max_tokens=400, **openai_kwargs)
+    article_gen_lm = ModelClass(model=gpt_4_model_name, max_tokens=700, **openai_kwargs)
+    article_polish_lm = ModelClass(model=gpt_4_model_name, max_tokens=4000, **openai_kwargs)
+    llm_configs.set_conv_simulator_lm(conv_simulator_lm)
+    llm_configs.set_question_asker_lm(question_asker_lm)
+    llm_configs.set_outline_gen_lm(outline_gen_lm)
+    llm_configs.set_article_gen_lm(article_gen_lm)
+    llm_configs.set_article_polish_lm(article_polish_lm)
+
+    llm_configs.set_question_asker_lm(AzureOpenAIModel(model='gpt-35-turbo', api_key=st.secrets['OPENAI_API_KEY'],
+                                                  api_base=st.secrets['AZURE_API_BASE'],
+                                                  api_version=st.secrets['AZURE_API_VERSION'],
                                                   max_tokens=500, temperature=1.0, top_p=0.9))
     engine_args = STORMWikiRunnerArguments(
         output_dir=current_working_dir,
@@ -514,8 +535,8 @@ def set_storm_runner():
         search_top_k=3,
         retrieve_top_k=5
     )
-
-    rm = YouRM(ydc_api_key=st.secrets['YDC_API_KEY'], k=engine_args.search_top_k)
+    rm = BingSearch(bing_search_api=st.secrets['BING_SEARCH_API_KEY'], k=engine_args.search_top_k)
+    # rm = YouRM(ydc_api_key=st.secrets['YDC_API_KEY'], k=engine_args.search_top_k)
 
     runner = STORMWikiRunner(engine_args, llm_configs, rm)
     st.session_state["runner"] = runner
