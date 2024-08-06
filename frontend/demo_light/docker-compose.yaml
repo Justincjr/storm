@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  streamlit_app:
-    build: .
+  strorm_app:
+    image: public.ecr.aws/m0c5k4m4/storm:latest
     ports:
       - "5000:8501"
     env_file:
