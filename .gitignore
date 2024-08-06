@@ -26,5 +26,6 @@ secrets.toml
 *results/
 
 venv
+myenv
 OUTPUT_DIR
 frontend\demo_light\DEMO_WORKING_DIR

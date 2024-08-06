@@ -12,7 +12,8 @@ COPY requirements.txt .
 RUN python3 -m venv venv && \
     . venv/bin/activate && \
     pip install knowledge-storm && \
-    pip install -r requirements.txt
+    pip install -r requirements.txt && \
+    pip install trafilatura==1.11.0
 
 # Copy the rest of the application code
 COPY . /app
