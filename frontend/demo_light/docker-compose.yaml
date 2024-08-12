@@ -1,12 +1,14 @@
 version: '3.8'
 
 services:
-  strorm_app:
+  storm_app:
     image: public.ecr.aws/m0c5k4m4/storm:latest
     ports:
       - "5000:8501"
     env_file:
       - .env
+    volumes:
+      - storm_data:/app/DEMO_WORKING_DIR
     entrypoint: /bin/sh -c "\
       cd .streamlit && \
       echo 'OPENAI_API_KEY = \"${OPENAI_API_KEY:-}\"' >> secrets.toml && \
@@ -17,3 +19,6 @@ services:
       cd .. && \
       . venv/bin/activate && \
       streamlit run storm.py"
+
+volumes:
+  storm_data:  # This defines the Docker volume named storm_data
