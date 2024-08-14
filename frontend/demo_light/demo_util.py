@@ -18,7 +18,7 @@ from knowledge_storm.lm import OpenAIModel, AzureOpenAIModel
 from knowledge_storm.rm import YouRM, BingSearch
 from knowledge_storm.storm_wiki.modules.callback import BaseCallbackHandler
 from stoc import stoc
-
+from knowledge_storm.rm import GoogleSearch
 
 class DemoFileIOHelper():
     @staticmethod
@@ -535,7 +535,10 @@ def set_storm_runner():
         search_top_k=3,
         retrieve_top_k=5
     )
-    rm = BingSearch(bing_search_api=st.secrets['BING_SEARCH_API_KEY'], k=engine_args.search_top_k)
+    if(st.secrets['FLAG']=="BING"):
+        rm = BingSearch(bing_search_api=st.secrets['BING_SEARCH_API_KEY'], k=engine_args.search_top_k)
+    else:
+        rm = GoogleSearch(google_search_api_key=st.secrets['GOOGLE_SEARCH_API_KEY'], google_cse_id=st.secrets['GOOGLE_CSE_ID'], k=engine_args.search_top_k)
     # rm = YouRM(ydc_api_key=st.secrets['YDC_API_KEY'], k=engine_args.search_top_k)
 
     runner = STORMWikiRunner(engine_args, llm_configs, rm)

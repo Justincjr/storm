@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   storm_app:
-    image: public.ecr.aws/m0c5k4m4/storm:latest
+    build: .
     ports:
       - "5000:8501"
     env_file:
@@ -15,6 +15,9 @@ services:
       echo 'AZURE_API_BASE = \"${AZURE_API_BASE:-}\"' >> secrets.toml && \
       echo 'AZURE_API_VERSION = \"${AZURE_API_VERSION:-}\"' >> secrets.toml && \
       echo 'BING_SEARCH_API_KEY = \"${BING_SEARCH_API_KEY:-}\"' >> secrets.toml && \
+      echo 'GOOGLE_SEARCH_API_KEY = \"${GOOGLE_SEARCH_API_KEY:-}\"' >> secrets.toml && \
+      echo 'GOOGLE_CSE_ID = \"${GOOGLE_CSE_ID:-}\"' >> secrets.toml && \
+      echo 'FLAG = \"${FLAG:-}\"' >> secrets.toml && \
       echo 'GPT_35_NAME = \"${GPT_35_NAME:-}\"' >> secrets.toml && \
       echo 'GPT_4_NAME = \"${GPT_4_NAME:-}\"' >> secrets.toml && \
       cat secrets.toml && \

@@ -404,3 +404,105 @@ class VectorRM(dspy.Retrieve):
                 })
 
         return collected_results
+
+class GoogleSearch(dspy.Retrieve):
+    def __init__(self, google_search_api_key=None, google_cse_id=None, k=3, is_valid_source: Callable = None,
+                 min_char_count: int = 150, snippet_chunk_size: int = 1000, webpage_helper_max_threads=10,
+                 language='en', **kwargs):
+        """
+        Params:
+            google_search_api_key: Google Search API key.
+            google_cse_id: Custom Search Engine (CSE) ID.
+            min_char_count: Minimum character count for the article to be considered valid.
+            snippet_chunk_size: Maximum character count for each snippet.
+            webpage_helper_max_threads: Maximum number of threads to use for webpage helper.
+            language: Language of the search results.
+        """
+        super().__init__(k=k)
+        if not google_search_api_key and not os.environ.get("GOOGLE_SEARCH_API_KEY"):
+            raise RuntimeError(
+                "You must supply google_search_api_key or set environment variable GOOGLE_SEARCH_API_KEY")
+        elif google_search_api_key:
+            self.google_api_key = google_search_api_key
+        else:
+            self.google_api_key = os.environ["GOOGLE_SEARCH_API_KEY"]
+
+        if not google_cse_id and not os.environ.get("GOOGLE_CSE_ID"):
+            raise RuntimeError(
+                "You must supply google_cse_id or set environment variable GOOGLE_CSE_ID")
+        elif google_cse_id:
+            self.google_cse_id = google_cse_id
+        else:
+            self.google_cse_id = os.environ["GOOGLE_CSE_ID"]
+
+        self.endpoint = "https://www.googleapis.com/customsearch/v1"
+        self.params = {
+            'key': self.google_api_key,
+            'cx': self.google_cse_id,
+            'num': k,
+            'lr': f'lang_{language}',
+            **kwargs
+        }
+        self.webpage_helper = WebPageHelper(
+            min_char_count=min_char_count,
+            snippet_chunk_size=snippet_chunk_size,
+            max_thread_num=webpage_helper_max_threads
+        )
+        self.usage = 0
+
+        # If not None, is_valid_source shall be a function that takes a URL and returns a boolean.
+        if is_valid_source:
+            self.is_valid_source = is_valid_source
+        else:
+            self.is_valid_source = lambda x: True
+
+    def get_usage_and_reset(self):
+        usage = self.usage
+        self.usage = 0
+
+        return {'GoogleSearch': usage}
+
+    def forward(self, query_or_queries: Union[str, List[str]], exclude_urls: List[str] = []):
+        """Search with Google Custom Search API for self.k top passages for query or queries
+
+        Args:
+            query_or_queries (Union[str, List[str]]): The query or queries to search for.
+            exclude_urls (List[str]): A list of urls to exclude from the search results.
+
+        Returns:
+            a list of Dicts, each dict has keys of 'description', 'snippets' (list of strings), 'title', 'url'
+        """
+        queries = (
+            [query_or_queries]
+            if isinstance(query_or_queries, str)
+            else query_or_queries
+        )
+        self.usage += len(queries)
+
+        url_to_results = {}
+
+        for query in queries:
+            try:
+                results = requests.get(
+                    self.endpoint,
+                    params={**self.params, 'q': query}
+                ).json()
+
+                for d in results.get('items', []):
+                    if self.is_valid_source(d['link']) and d['link'] not in exclude_urls:
+                        url_to_results[d['link']] = {
+                            'url': d['link'],
+                            'title': d['title'],
+                            'description': d.get('snippet', '')
+                        }
+            except Exception as e:
+                logging.error(f'Error occurs when searching query {query}: {e}')
+
+        valid_url_to_snippets = self.webpage_helper.urls_to_snippets(list(url_to_results.keys()))
+        collected_results = []
+        for url in valid_url_to_snippets:
+            r = url_to_results[url]
+            r['snippets'] = valid_url_to_snippets[url]['snippets']
+            collected_results.append(r)
+
+        return collected_results
