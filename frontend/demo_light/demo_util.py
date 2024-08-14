@@ -511,8 +511,8 @@ def set_storm_runner():
     openai_kwargs['api_base'] = st.secrets['AZURE_API_BASE']
     openai_kwargs['api_version'] = st.secrets['AZURE_API_VERSION']
     ModelClass = AzureOpenAIModel
-    gpt_35_model_name = 'gpt-35-turbo'
-    gpt_4_model_name = 'gpt-4o'
+    gpt_35_model_name = st.secrets['GPT_35_NAME']
+    gpt_4_model_name = st.secrets['GPT_4_NAME']
     conv_simulator_lm = ModelClass(model=gpt_35_model_name, max_tokens=500, **openai_kwargs)
     question_asker_lm = ModelClass(model=gpt_35_model_name, max_tokens=500, **openai_kwargs)
     outline_gen_lm = ModelClass(model=gpt_4_model_name, max_tokens=400, **openai_kwargs)
@@ -524,7 +524,7 @@ def set_storm_runner():
     llm_configs.set_article_gen_lm(article_gen_lm)
     llm_configs.set_article_polish_lm(article_polish_lm)
 
-    llm_configs.set_question_asker_lm(AzureOpenAIModel(model='gpt-35-turbo', api_key=st.secrets['OPENAI_API_KEY'],
+    llm_configs.set_question_asker_lm(AzureOpenAIModel(model=gpt_35_model_name, api_key=st.secrets['OPENAI_API_KEY'],
                                                   api_base=st.secrets['AZURE_API_BASE'],
                                                   api_version=st.secrets['AZURE_API_VERSION'],
                                                   max_tokens=500, temperature=1.0, top_p=0.9))

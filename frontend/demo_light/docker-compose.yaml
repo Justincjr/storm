@@ -15,10 +15,12 @@ services:
       echo 'AZURE_API_BASE = \"${AZURE_API_BASE:-}\"' >> secrets.toml && \
       echo 'AZURE_API_VERSION = \"${AZURE_API_VERSION:-}\"' >> secrets.toml && \
       echo 'BING_SEARCH_API_KEY = \"${BING_SEARCH_API_KEY:-}\"' >> secrets.toml && \
+      echo 'GPT_35_NAME = \"${GPT_35_NAME:-}\"' >> secrets.toml && \
+      echo 'GPT_4_NAME = \"${GPT_4_NAME:-}\"' >> secrets.toml && \
       cat secrets.toml && \
       cd .. && \
       . venv/bin/activate && \
       streamlit run storm.py"
 
 volumes:
-  storm_data:  # This defines the Docker volume named storm_data
+  storm_data:
